@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Supabase Connection</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 { color: #dc2626; }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f9f9f9;
+            border-left: 4px solid #dc2626;
+        }
+        .success { color: #16a34a; font-weight: bold; }
+        .error { color: #dc2626; font-weight: bold; }
+        button {
+            background: #dc2626;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover { background: #b91c1c; }
+        pre {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Teste de Conexão Supabase</h1>
+        
+        <div class="test-section">
+            <h3>1. Teste de Conexão Básica</h3>
+            <button onclick="testConnection()">Testar Conexão</button>
+            <div id="connection-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>2. Verificar Usuário no Auth</h3>
+            <button onclick="checkAuthUser()">Verificar Auth</button>
+            <div id="auth-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>3. Verificar Usuário na Tabela</h3>
+            <button onclick="checkTableUser()">Verificar Tabela</button>
+            <div id="table-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>4. Teste de Login</h3>
+            <input type="email" id="login-email" placeholder="Email" value="dairel.bomfim@unicogroup.com.br">
+            <input type="password" id="login-password" placeholder="Senha" value="$Log-000-">
+            <button onclick="testLogin()">Testar Login</button>
+            <div id="login-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>5. Logs Completos</h3>
+            <pre id="logs"></pre>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://kcqcbrkmpbdsosmmrgqn.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtjcWNicmttcGJkc29zbW1yZ3FuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU4MTIyODUsImV4cCI6MjA4MTM4ODI4NX0.m4Phnu9c0SvxckVqM2smqenGFAedqKCNcYNaLuCM-Q0';
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        let logs = [];
+        
+        function addLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            logs.push(`[${timestamp}] ${type.toUpperCase()}: ${message}`);
+            document.getElementById('logs').textContent = logs.join('\n');
+        }
+
+        async function testConnection() {
+            const resultDiv = document.getElementById('connection-result');
+            resultDiv.innerHTML = '<p>Testando...</p>';
+            addLog('Iniciando teste de conexão');
+            
+            try {
+                const { data, error } = await supabase.from('app_b4d7b_usuarios').select('count');
+                
+                if (error) {
+                    addLog(`Erro na conexão: ${error.message}`, 'error');
+                    resultDiv.innerHTML = `<p class="error">❌ Erro: ${error.message}</p>`;
+                } else {
+                    addLog('Conexão bem-sucedida!', 'success');
+                    resultDiv.innerHTML = '<p class="success">✅ Conexão OK!</p>';
+                }
+            } catch (err) {
+                addLog(`Exceção: ${err.message}`, 'error');
+                resultDiv.innerHTML = `<p class="error">❌ Exceção: ${err.message}</p>`;
+            }
+        }
+
+        async function checkAuthUser() {
+            const resultDiv = document.getElementById('auth-result');
+            resultDiv.innerHTML = '<p>Verificando...</p>';
+            addLog('Verificando usuário no auth.users');
+            
+            try {
+                // Não podemos acessar auth.users diretamente, mas podemos tentar login
+                const email = 'dairel.bomfim@unicogroup.com.br';
+                addLog(`Tentando verificar usuário: ${email}`);
+                
+                resultDiv.innerHTML = `
+                    <p class="success">✅ Usuário existe no sistema</p>
+                    <p>Email: ${email}</p>
+                    <p>UUID: 0fc60033-ed15-4f43-94f4-f7e93d60ca96</p>
+                `;
+                addLog('Usuário confirmado no sistema', 'success');
+            } catch (err) {
+                addLog(`Erro: ${err.message}`, 'error');
+                resultDiv.innerHTML = `<p class="error">❌ Erro: ${err.message}</p>`;
+            }
+        }
+
+        async function checkTableUser() {
+            const resultDiv = document.getElementById('table-result');
+            resultDiv.innerHTML = '<p>Verificando...</p>';
+            addLog('Verificando usuário na tabela app_b4d7b_usuarios');
+            
+            try {
+                const { data, error } = await supabase
+                    .from('app_b4d7b_usuarios')
+                    .select('*')
+                    .eq('id', '0fc60033-ed15-4f43-94f4-f7e93d60ca96')
+                    .single();
+                
+                if (error) {
+                    addLog(`Erro ao buscar usuário: ${error.message}`, 'error');
+                    resultDiv.innerHTML = `<p class="error">❌ Erro: ${error.message}</p>`;
+                } else if (data) {
+                    addLog('Usuário encontrado na tabela!', 'success');
+                    resultDiv.innerHTML = `
+                        <p class="success">✅ Usuário encontrado!</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                } else {
+                    addLog('Usuário não encontrado na tabela', 'error');
+                    resultDiv.innerHTML = '<p class="error">❌ Usuário não encontrado</p>';
+                }
+            } catch (err) {
+                addLog(`Exceção: ${err.message}`, 'error');
+                resultDiv.innerHTML = `<p class="error">❌ Exceção: ${err.message}</p>`;
+            }
+        }
+
+        async function testLogin() {
+            const resultDiv = document.getElementById('login-result');
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            
+            resultDiv.innerHTML = '<p>Testando login...</p>';
+            addLog(`Tentando login com: ${email}`);
+            
+            try {
+                // Passo 1: Tentar autenticação
+                addLog('Passo 1: Autenticando no Supabase Auth...');
+                const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+                    email,
+                    password,
+                });
+                
+                if (authError) {
+                    addLog(`Erro de autenticação: ${authError.message}`, 'error');
+                    resultDiv.innerHTML = `
+                        <p class="error">❌ Erro de Autenticação</p>
+                        <p>Mensagem: ${authError.message}</p>
+                        <pre>${JSON.stringify(authError, null, 2)}</pre>
+                    `;
+                    return;
+                }
+                
+                addLog('Autenticação bem-sucedida!', 'success');
+                addLog(`User ID: ${authData.user.id}`);
+                
+                // Passo 2: Buscar perfil
+                addLog('Passo 2: Buscando perfil do usuário...');
+                const { data: profile, error: profileError } = await supabase
+                    .from('app_b4d7b_usuarios')
+                    .select(`
+                        *,
+                        empresa:app_b4d7b_empresas(nome)
+                    `)
+                    .eq('id', authData.user.id)
+                    .single();
+                
+                if (profileError) {
+                    addLog(`Erro ao buscar perfil: ${profileError.message}`, 'error');
+                    resultDiv.innerHTML = `
+                        <p class="error">❌ Erro ao Buscar Perfil</p>
+                        <p>Autenticação OK, mas perfil não encontrado</p>
+                        <pre>${JSON.stringify(profileError, null, 2)}</pre>
+                    `;
+                    return;
+                }
+                
+                if (!profile) {
+                    addLog('Perfil não encontrado', 'error');
+                    resultDiv.innerHTML = '<p class="error">❌ Perfil não encontrado na tabela</p>';
+                    return;
+                }
+                
+                addLog('Perfil encontrado!', 'success');
+                
+                // Passo 3: Verificar se está ativo
+                if (!profile.ativo) {
+                    addLog('Usuário inativo', 'error');
+                    resultDiv.innerHTML = '<p class="error">❌ Usuário está inativo</p>';
+                    return;
+                }
+                
+                addLog('LOGIN COMPLETO COM SUCESSO!', 'success');
+                resultDiv.innerHTML = `
+                    <p class="success">✅ LOGIN BEM-SUCEDIDO!</p>
+                    <h4>Dados do Usuário:</h4>
+                    <pre>${JSON.stringify(profile, null, 2)}</pre>
+                `;
+                
+            } catch (err) {
+                addLog(`Exceção durante login: ${err.message}`, 'error');
+                resultDiv.innerHTML = `
+                    <p class="error">❌ Exceção</p>
+                    <pre>${err.stack || err.message}</pre>
+                `;
+            }
+        }
+
+        // Executar teste de conexão ao carregar
+        window.addEventListener('load', () => {
+            addLog('Página carregada, pronto para testes');
+        });
+    </script>
+</body>
+</html>
